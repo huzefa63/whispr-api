@@ -1,0 +1,108 @@
+import prisma from "../lib/prisma.js";
+import catchAsync from "../lib/catchAsync.js";
+import { socketUsers } from "../app.js";
+import io from '../app.js'
+import multer from "multer";
+import sharp from "sharp";
+import { Readable } from 'stream'; // ✅ for ES modules
+import cloudinary from "../cloudinary.js";
+
+export const getMessages = catchAsync(async (req,res,next) => {
+    const {friendId} = req.query;
+    const {id:userId} = req.user;
+    console.log(userId,friendId);
+    const messages = await prisma.message.findMany({
+      where: {
+        OR: [
+          {
+            senderId: Number(friendId),
+            recieverId: Number(userId),
+          },
+          {
+            senderId: Number(userId),
+            recieverId: Number(friendId),
+          },
+        ],
+      },
+      orderBy: {
+        time: "asc",
+      },
+    });
+    res.status(200).json({status:'success',messages})
+})
+
+const multerStorage = multer.memoryStorage();
+
+const multerFilter = (req,file,cb) => {
+  console.log('from file',file);
+  if(file.mimetype.startsWith('image/')){
+    cb(null,true);
+  }else{
+    cb(new Error('only image are allowed'),false);
+  }
+}
+
+export const upload = multer({
+  storage:multerStorage,
+  fileFilter:multerFilter,
+})
+
+export const resizeImage = async (req,res,next) => {
+  const file = req.file;
+  if(!file) {
+    console.log("no file found to resize");
+    return next();
+  }
+  console.log('resizing image');
+  const imageBuffer = await sharp(req.file.buffer).resize(400,400).jpeg({quality:80}).toBuffer();
+  const readableBuffer = new Readable();
+  readableBuffer.push(imageBuffer);
+  readableBuffer.push(null);
+
+  const stream = cloudinary.uploader.upload_stream({
+    resource_type:'auto',
+  },(err,result) => {
+    if(err) next({statusCode:500,message:'error'});
+    console.log('secure url',result.secure_url);
+    req.body.image = result.secure_url;
+    next();
+  })
+
+  readableBuffer.pipe(stream);
+}
+
+export const sendMessages = catchAsync(async (req,res,next) => {
+    const {message,recieverId,caption} = req.body;
+    const senderId = req.user?.id;
+    let socketRes = {};
+    console.log('from main handler',req.body?.image)
+  if(req.body?.image) {
+    const ress = await prisma.message.create({
+      data: { mediaUrl:req.body?.image, senderId, recieverId: Number(recieverId),caption:caption ||'',Type:'image' },
+      // data: { mediaUrl:req.image, senderId, recieverId: 2,caption:caption ||'' },
+    });
+    console.log('after db save',ress);
+    socketRes.mediaUrl = req.body?.image;
+    socketRes.senderId = senderId;
+    socketRes.recieverId = recieverId;
+    socketRes.caption = caption || '';
+    socketRes.time = new Date().toISOString();
+    socketRes.Type = "image"
+  }
+
+
+    if(!req.body?.image){
+      await prisma.message.create({
+        data: { message, senderId: senderId, recieverId: Number(recieverId) },
+      });
+      socketRes.senderId = senderId;
+      socketRes.recieverId = recieverId;
+      socketRes.time = new Date().toISOString();
+      socketRes.message = message;
+      socketRes.Type = "text"
+    }
+    const recieverSocket = socketUsers.get(Number(recieverId));
+    io.to(recieverSocket?.id).emit("messageRecieved", socketRes);
+    io.to(socketUsers.get(senderId).id).emit("messageRecieved", socketRes);
+    res.status(200).json({status:'success'});
+})

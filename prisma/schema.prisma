@@ -6,19 +6,45 @@
 
 generator client {
   provider = "prisma-client-js"
-  output   = "../lib/generated/prisma"
 }
 
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
+  
 }
 
 model User {
   id Int @id @default(autoincrement())
   name String @db.VarChar(40)
-  email String
-  contactNumber Int @unique
+  email String @unique
+  contactNumber String @unique
   password String
   profileImage String?
+  user Chat[] @relation("user")
+  friend Chat[] @relation("friend")
+  messagesSent Message[] @relation("messagesSent")
+  messagesReceived Message[] @relation("messagesReceived")
+}
+
+model Chat {
+  id Int @id @default(autoincrement())
+  user User @relation("user",fields: [userId] , references: [id])
+  userId Int
+  friend User @relation("friend",fields: [friendId] , references: [id])
+  friendId Int 
+}
+
+model Message {
+  id Int @id @default(autoincrement())
+  sender User @relation("messagesSent",fields: [senderId] , references: [id])
+  senderId Int
+  reciever User @relation("messagesReceived",fields: [recieverId] , references: [id])
+  recieverId Int
+  time DateTime @default(now())
+  isRead Boolean @default(false)
+  message String?
+  mediaUrl String?
+  caption String?
+  Type String?
 }
