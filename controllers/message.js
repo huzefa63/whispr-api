@@ -104,14 +104,14 @@ export const sendMessages = catchAsync(async (req,res,next) => {
       // data: { mediaUrl:req.image, senderId, recieverId: 2,caption:caption ||'' },
     });
     await prisma.chat.updateMany({
-      data:{
-        lastMessage:'photo'
-      },
       where: {
         OR: [
           { userId: senderId, friendId: Number(recieverId) },
           { userId: Number(recieverId), friendId: senderId },
         ],
+      },
+      data: {
+        lastMessage: "photo",
       },
     });
     console.log('after db save',ress);
@@ -130,14 +130,15 @@ export const sendMessages = catchAsync(async (req,res,next) => {
       });
       console.log('heeee',senderId,recieverId)
       await prisma.chat.updateMany({
-        data: {
-          lastMessage: message,
-        },
         where: {
           OR: [
             { userId: senderId, friendId: Number(recieverId) },
             { userId: Number(recieverId), friendId: senderId },
           ],
+        },
+        data: {
+          // lastMessage: message,
+          lastMessage: message,
         },
       });
       socketRes.senderId = senderId;
