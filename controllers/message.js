@@ -127,7 +127,7 @@ export const sendMessages = catchAsync(async (req,res,next) => {
     if(!req.body?.image){
 
       await prisma.message.create({
-        data: { message, senderId: senderId, recieverId: Number(recieverId) },
+        data: { message, senderId, recieverId: Number(recieverId) },
       });
       console.log('heeee',senderId,recieverId)
       const updateRes = await prisma.chat.updateManyAndReturn({
@@ -152,6 +152,6 @@ export const sendMessages = catchAsync(async (req,res,next) => {
     }
     const recieverSocket = socketUsers.get(Number(recieverId));
     io.to(recieverSocket?.id).emit("messageRecieved", socketRes);
-    io.to(socketUsers.get(senderId).id).emit("messageRecieved", socketRes);
+    io.to(socketUsers.get(senderId)?.id).emit("messageRecieved", socketRes);
     res.status(200).json({status:'success'});
 })
