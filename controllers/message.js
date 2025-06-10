@@ -106,8 +106,8 @@ export const sendMessages = catchAsync(async (req,res,next) => {
     await prisma.chat.updateMany({
       where: {
         OR: [
-          { userId: senderId, friendId: Number(recieverId) },
-          { userId: Number(recieverId), friendId: senderId },
+          { userId: senderId, user2Id: Number(recieverId) },
+          { userId: Number(recieverId), user2Id: senderId },
         ],
       },
       data: {
@@ -125,15 +125,16 @@ export const sendMessages = catchAsync(async (req,res,next) => {
 
 
     if(!req.body?.image){
+
       await prisma.message.create({
         data: { message, senderId: senderId, recieverId: Number(recieverId) },
       });
       console.log('heeee',senderId,recieverId)
-      await prisma.chat.updateMany({
+      const updateRes = await prisma.chat.updateManyAndReturn({
         where: {
           OR: [
-            { userId: senderId, friendId: Number(recieverId) },
-            { userId: Number(recieverId), friendId: senderId },
+            { userId: senderId, user2Id: Number(recieverId) },
+            { userId: Number(recieverId), user2Id: senderId },
           ],
         },
         data: {
@@ -141,6 +142,7 @@ export const sendMessages = catchAsync(async (req,res,next) => {
           recentMessage: {set:message},
         },
       });
+      console.log(updateRes);
       socketRes.senderId = senderId;
       socketRes.recieverId = recieverId;
       socketRes.time = new Date().toISOString();
