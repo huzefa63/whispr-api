@@ -39,6 +39,18 @@ export const readMessages = catchAsync(async (req,res,next) => {
       return res.status(200).json({ message: "no friend id" });
     }
     console.log('from friend',friendId);
+    await prisma.chat.updateMany({
+      where: {
+        OR: [
+          { userId: userId, user2Id: Number(friendId) },
+          { userId: Number(friendId), user2Id: userId },
+        ],
+        recentMessageSenderId:{not:userId}
+      },
+      data:{
+        isRecentMessageRead:true
+      }
+    });
     const messages = await prisma.message.updateMany({
       data:{
         isRead:true
@@ -112,6 +124,8 @@ export const sendMessages = catchAsync(async (req,res,next) => {
       },
       data: {
         recentMessage: {set:"photo"},
+        recentMessageSenderId:{set:senderId},
+        isRecentMessageRead:{set:false}
       },
     });
     console.log('after db save',ress);
@@ -139,7 +153,9 @@ export const sendMessages = catchAsync(async (req,res,next) => {
         },
         data: {
           // lastMessage: message,
-          recentMessage: {set:message},
+          recentMessage: { set: message },
+          recentMessageSenderId: { set: senderId },
+          isRecentMessageRead:{set:false}
         },
       });
       console.log(updateRes);

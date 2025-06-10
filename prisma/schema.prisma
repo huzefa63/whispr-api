@@ -34,6 +34,8 @@ model Chat {
   user2 User @relation("user2",fields: [user2Id] , references: [id])
   user2Id Int 
   recentMessage String?
+  recentMessageSenderId Int?
+  isRecentMessageRead Boolean @default(false)
 }
 
 model Message {
