@@ -30,9 +30,6 @@ app.use('/message',messageRoute);
 app.use('/auth',authRoute);
 // app.use('/auth',userRoute);
 
-
-
-
 export let socketUsers = new Map();
 
 

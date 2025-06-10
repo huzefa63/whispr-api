@@ -30,6 +30,28 @@ export const getMessages = catchAsync(async (req,res,next) => {
     });
     res.status(200).json({status:'success',messages})
 })
+export const readMessages = catchAsync(async (req,res,next) => {
+    const {friendId} = req.params;
+    const {id:userId} = req.user;
+    console.log(userId,friendId);
+    if (!friendId || friendId === "null" || friendId === "undefined"){
+
+      return res.status(200).json({ message: "no friend id" });
+    }
+    console.log('from friend',friendId);
+    const messages = await prisma.message.updateMany({
+      data:{
+        isRead:true
+      },
+      where: {
+       senderId:Number(friendId),
+       recieverId:userId
+      },
+    });
+    const friendSocketId = socketUsers.get(Number(friendId))?.id;
+    io.to(friendSocketId).emit('message-read');
+    res.status(200).json({status:'success'});
+})
 
 const multerStorage = multer.memoryStorage();
 
@@ -81,6 +103,17 @@ export const sendMessages = catchAsync(async (req,res,next) => {
       data: { mediaUrl:req.body?.image, senderId, recieverId: Number(recieverId),caption:caption ||'',Type:'image' },
       // data: { mediaUrl:req.image, senderId, recieverId: 2,caption:caption ||'' },
     });
+    await prisma.chat.updateMany({
+      data:{
+        lastMessage:'photo'
+      },
+      where: {
+        OR: [
+          { userId: senderId, friendId: Number(recieverId) },
+          { userId: Number(recieverId), friendId: senderId },
+        ],
+      },
+    });
     console.log('after db save',ress);
     socketRes.mediaUrl = req.body?.image;
     socketRes.senderId = senderId;
@@ -95,11 +128,24 @@ export const sendMessages = catchAsync(async (req,res,next) => {
       await prisma.message.create({
         data: { message, senderId: senderId, recieverId: Number(recieverId) },
       });
+      console.log('heeee',senderId,recieverId)
+      await prisma.chat.updateMany({
+        data: {
+          lastMessage: message,
+        },
+        where: {
+          OR: [
+            { userId: senderId, friendId: Number(recieverId) },
+            // { userId: Number(recieverId), friendId: senderId },
+          ],
+        },
+      });
       socketRes.senderId = senderId;
       socketRes.recieverId = recieverId;
       socketRes.time = new Date().toISOString();
       socketRes.message = message;
       socketRes.Type = "text"
+
     }
     const recieverSocket = socketUsers.get(Number(recieverId));
     io.to(recieverSocket?.id).emit("messageRecieved", socketRes);

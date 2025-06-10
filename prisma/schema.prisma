@@ -33,6 +33,7 @@ model Chat {
   userId Int
   friend User @relation("friend",fields: [friendId] , references: [id])
   friendId Int 
+  lastMessage String?
 }
 
 model Message {

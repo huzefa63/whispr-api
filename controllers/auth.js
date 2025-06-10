@@ -5,6 +5,7 @@ import catchAsync from "../lib/catchAsync.js";
 
     export const signInUser = catchAsync(async (req,res,next) => {
         const {email,password} = req.body;
+        console.log(req.body)
         const payload = await prisma.user.findUnique({
             where:{
                 email
