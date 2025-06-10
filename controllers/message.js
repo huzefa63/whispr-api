@@ -136,7 +136,7 @@ export const sendMessages = catchAsync(async (req,res,next) => {
         where: {
           OR: [
             { userId: senderId, friendId: Number(recieverId) },
-            // { userId: Number(recieverId), friendId: senderId },
+            { userId: Number(recieverId), friendId: senderId },
           ],
         },
       });
