@@ -18,17 +18,19 @@ export const getChats = catchAsync(async (req,res,next) => {
 export const createChat = catchAsync(async (req, res, next) => {
   const { contactNumber } = req.params;
   console.log(contactNumber);
-  const userId = req.user;
+  const userId = req.user.id;
   const friend = await prisma.user.findUnique({
       where:{
           contactNumber:contactNumber,
         }
     })
+    if(!friend) return res.status(400).json({status:"friend does not exist"});
+    const friendId = friend.id;
     const chatsExists = await prisma.chat.findFirst({
       where: {
         OR: [
-          { userId, user2Id: friend?.id },
-          { userId: friend?.id, user2Id: userId },
+          { userId, user2Id: friendId },
+          { userId: friendId, user2Id: userId },
         ],
       },
     });
@@ -36,7 +38,7 @@ export const createChat = catchAsync(async (req, res, next) => {
   const chatRes = await prisma.chat.create({
     data:{
         userId:userId,
-        user2Id:friend.id,
+        user2Id:friendId,
     }
   });
   res.status(200).json({ status: "success", chats: chatRes });

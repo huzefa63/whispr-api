@@ -10,7 +10,7 @@ export const createUser = catchAsync(async (req,res,next) => {
     const password = await bcrypt.hash(plainpassword,12);
     const payload = await prisma.user.create({data:{email,name,password,contactNumber}})
     const token = jwt.sign(payload,process.env.SECRET,{expiresIn:'7d'});
-    res.status(201).json({status:'success',jwt:token,user:response});
+    res.status(201).json({status:'success',jwt:token,user:payload});
 })
 
 export const getUser = catchAsync(async (req,res,next) => {
