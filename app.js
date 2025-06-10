@@ -58,7 +58,7 @@ io.on('connection',(socket) => {
     })
 })
 
-app('/keepServerAlive',() => console.log('server is alive'));
+app.use('/keepServerAlive',(req,res) => console.log('server is alive'));
 
 app.use((err,req,res,next) => {
     console.log(err);
