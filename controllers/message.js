@@ -111,7 +111,7 @@ export const sendMessages = catchAsync(async (req,res,next) => {
         ],
       },
       data: {
-        lastMessage: "photo",
+        lastMessage: {set:"photo"},
       },
     });
     console.log('after db save',ress);
@@ -138,7 +138,7 @@ export const sendMessages = catchAsync(async (req,res,next) => {
         },
         data: {
           // lastMessage: message,
-          lastMessage: message,
+          lastMessage: {set:message},
         },
       });
       socketRes.senderId = senderId;
