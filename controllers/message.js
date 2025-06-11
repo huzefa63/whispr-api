@@ -175,7 +175,5 @@ export const sendMessages = catchAsync(async (req,res,next) => {
     const senderSocketId = socketUsers.get(senderId)?.id;
     io.to(recieverSocketId).emit("messageRecieved", socketRes);
     io.to(senderSocketId).emit("messageRecieved", socketRes);
-    io.to(recieverSocketId).emit('revalidate-chats', socketRes);
-    io.to(senderSocketId).emit('revalidate-chats', socketRes);
     res.status(200).json({status:'success'});
 })
