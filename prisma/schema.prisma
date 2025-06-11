@@ -36,6 +36,7 @@ model Chat {
   recentMessage String?
   recentMessageSenderId Int?
   isRecentMessageRead Boolean @default(false)
+  recentMessageCreatedAt DateTime?
 }
 
 model Message {

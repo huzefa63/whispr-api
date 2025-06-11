@@ -12,6 +12,9 @@ export const getChats = catchAsync(async (req,res,next) => {
         user:true,
         user2:true
       },
+      orderBy:{
+        recentMessageCreatedAt:'desc'
+      }
     });
     res.status(200).json({status:'success',chats:chatRes,currentUserId:userId});
 })

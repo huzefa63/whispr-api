@@ -60,6 +60,37 @@ io.on('connection',(socket) => {
 
 app.use('/keepServerAlive',(req,res) => console.log('server is alive'));
 
+const object = [{id
+    : 
+    4,
+    isRecentMessageRead
+    : 
+    false,
+    recentMessage
+    : 
+    "fdf",
+    recentMessageCreatedAt
+    : 
+    "2025-06-11T06:52:46.868Z",
+    recentMessageSenderId
+    : 
+    1,
+    user
+    : 
+    {id: 1, name: 'HUZEFA RATLAMWALA', email: 'huzefa@gmail.com', contactNumber: '7861074608', password: '$2b$12$dU9P7CeCk.hLnMcbf16h/Oc7QX42UK9x5M/7Vohj2S/FzAIKJ8m8.', }
+    ,user2
+    : 
+    {id: 3, name: 'Abbas Chuna', email: 'abbas@gmail.com', contactNumber: '7202960275', password: '$2b$12$RmpLr8pgopMQ/dCMIx4RV..cQMfNN1IsqZiMijmSHliHA56jO7l1u', }
+    ,user2Id
+    : 
+    3
+    ,userId
+    : 
+    1}]
+
+const shallow = [...object];
+console.log('obj',shallow);
+
 app.use((err,req,res,next) => {
     console.log(err);
     res.status(500).json({message:err?.message});

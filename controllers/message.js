@@ -123,9 +123,10 @@ export const sendMessages = catchAsync(async (req,res,next) => {
         ],
       },
       data: {
-        recentMessage: {set:"photo"},
-        recentMessageSenderId:{set:senderId},
-        isRecentMessageRead:{set:false}
+        recentMessage: { set: "photo" },
+        recentMessageSenderId: { set: senderId },
+        isRecentMessageRead: { set: false },
+        recentMessageCreatedAt: new Date(),
       },
     });
     console.log('after db save',ress);
@@ -155,7 +156,8 @@ export const sendMessages = catchAsync(async (req,res,next) => {
           // lastMessage: message,
           recentMessage: { set: message },
           recentMessageSenderId: { set: senderId },
-          isRecentMessageRead:{set:false}
+          isRecentMessageRead:{set:false},
+          recentMessageCreatedAt: new Date()
         },
       });
       console.log(updateRes);
@@ -166,8 +168,11 @@ export const sendMessages = catchAsync(async (req,res,next) => {
       socketRes.Type = "text"
 
     }
-    const recieverSocket = socketUsers.get(Number(recieverId));
-    io.to(recieverSocket?.id).emit("messageRecieved", socketRes);
-    io.to(socketUsers.get(senderId)?.id).emit("messageRecieved", socketRes);
+    const recieverSocketId = socketUsers.get(Number(recieverId))?.id;
+    const senderSocketId = socketUsers.get(senderId)?.id;
+    io.to(recieverSocketId).emit("messageRecieved", socketRes);
+    io.to(senderSocketId).emit("messageRecieved", socketRes);
+    io.to(recieverSocketId).emit('revalidate-chats', socketRes);
+    io.to(senderSocketId).emit('revalidate-chats', socketRes);
     res.status(200).json({status:'success'});
 })
