@@ -50,6 +50,9 @@ io.on('connection',(socket) => {
     }
     socketUsers.set(userId,socket);
     console.log(socketUsers.keys());
+    socket.on('typing',({typerId,toTypingId}) => {
+        socket.to(toTypingId).emit(typerId);
+    })
     socket.on('disconnect',() => {
         if(socketUsers.has(userId)){
             socketUsers.delete(userId);
