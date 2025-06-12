@@ -106,7 +106,7 @@ export const resizeImage = async (req,res,next) => {
 }
 
 export const sendMessages = catchAsync(async (req,res,next) => {
-    const {message,recieverId,caption} = req.body;
+    const {message,recieverId,caption,uniqueId} = req.body;
     const senderId = req.user?.id;
     let socketRes = {};
     console.log('from main handler',req.body?.image)
@@ -170,6 +170,7 @@ export const sendMessages = catchAsync(async (req,res,next) => {
       socketRes.message = message;
       socketRes.Type = "text"
       socketRes.chat = updatedChat;
+      socketRes.uniqueId = uniqueId;
     }
     const recieverSocketId = socketUsers.get(Number(recieverId))?.id;
     const senderSocketId = socketUsers.get(senderId)?.id;
