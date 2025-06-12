@@ -51,7 +51,9 @@ io.on('connection',(socket) => {
     socketUsers.set(userId,socket);
     console.log(socketUsers.keys());
     socket.on('typing',({typerId,toTypingId}) => {
-        socket.to(socketUsers.get(toTypingId).id).emit(typerId);
+        if(socketUsers.has(toTypingId)){
+            socket.to(socketUsers.get(toTypingId).id).emit(typerId);
+        }
         console.log(socketUsers.get(toTypingId));
     })
     socket.on('disconnect',() => {
