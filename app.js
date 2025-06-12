@@ -52,7 +52,7 @@ io.on('connection',(socket) => {
     console.log(socketUsers.keys());
     socket.on('typing',({typerId,toTypingId}) => {
         socket.to(socketUsers.get(toTypingId)).emit(typerId);
-        console.log('typing: ',typerId,' : ',toTypingId);
+        console.log(socketUsers.get(toTypingId));
     })
     socket.on('disconnect',() => {
         if(socketUsers.has(userId)){
