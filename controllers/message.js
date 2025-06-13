@@ -137,6 +137,7 @@ export const sendMessages = catchAsync(async (req,res,next) => {
     socketRes.time = new Date().toISOString();
     socketRes.Type = "image"
     socketRes.chat = updatedChat;
+    socketRes.isRead = false;
   }
 
     if(!req.body?.image){
@@ -171,6 +172,7 @@ export const sendMessages = catchAsync(async (req,res,next) => {
       socketRes.Type = "text"
       socketRes.chat = updatedChat;
       socketRes.uniqueId = uniqueId;
+      socketRes.isRead = false;
     }
     const recieverSocketId = socketUsers.get(Number(recieverId))?.id;
     const senderSocketId = socketUsers.get(senderId)?.id;
