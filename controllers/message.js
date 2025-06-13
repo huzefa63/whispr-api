@@ -61,7 +61,10 @@ export const readMessages = catchAsync(async (req,res,next) => {
       },
     });
     const friendSocketId = socketUsers.get(Number(friendId))?.id;
-    io.to(friendSocketId).emit('message-read');
+    io.to(friendSocketId).emit("message-read", {
+      friendId: Number(friendId),
+      userId: userId,
+    });
     res.status(200).json({status:'success'});
 })
 
