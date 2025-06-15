@@ -32,11 +32,16 @@ export const createChat = catchAsync(async (req, res, next) => {
     const chatsExists = await prisma.chat.findFirst({
       where: {
         OR: [
-          { userId, user2Id: friendId },
-          { userId: friendId, user2Id: userId },
+          {
+            AND: [{ userId: userId }, { user2Id: friendId }],
+          },
+          {
+            AND: [{ userId: friendId }, { user2Id: userId }],
+          },
         ],
       },
     });
+    
     if(chatsExists) next({statusCode:500,message:'chat already exists'});
   const chatRes = await prisma.chat.create({
     data:{
