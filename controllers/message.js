@@ -30,6 +30,55 @@ export const getMessages = catchAsync(async (req,res,next) => {
     });
     res.status(200).json({status:'success',messages})
 })
+
+export const deleteMessages = catchAsync(async (req, res, next) => {
+  const { friendId } = req.params;
+  const { id: userId } = req.user;
+  console.log(friendId);
+  
+  if (!friendId || friendId === "null" || friendId === "undefined") {
+    return res.status(200).json({ message: "no friend id" });
+  }
+  await prisma.message.deleteMany({
+    where: {
+      OR: [
+        { senderId: userId, recieverId: Number(friendId) },
+        { senderId: Number(friendId), recieverId: userId },
+      ],
+    },
+  });
+  console.log("from friend", friendId);
+  await prisma.chat.updateMany({
+    where: {
+      OR: [
+        { userId: userId, user2Id: Number(friendId) },
+        { userId: Number(friendId), user2Id: userId },
+      ],
+    },
+    data: {
+      isRecentMessageRead: false,
+      recentMessage:null,
+      recentMessageCreatedAt:null,
+      recentMessageSenderId:null
+    },
+  });
+  const messages = await prisma.message.updateMany({
+    data: {
+      isRead: true,
+    },
+    where: {
+      senderId: Number(friendId),
+      recieverId: userId,
+    },
+  });
+  const friendSocketId = socketUsers.get(Number(friendId))?.id;
+  io.to(friendSocketId).emit("message-read", {
+    friendId: Number(friendId),
+    userId: userId,
+  });
+  res.status(200).json({ status: "success" });
+});
+;
 export const readMessages = catchAsync(async (req,res,next) => {
     const {friendId} = req.params;
     const {id:userId} = req.user;
@@ -118,7 +167,7 @@ export const sendMessages = catchAsync(async (req,res,next) => {
       data: { mediaUrl:req.body?.image, senderId, recieverId: Number(recieverId),caption:caption ||'',Type:'image' },
       // data: { mediaUrl:req.image, senderId, recieverId: 2,caption:caption ||'' },
     });
-    const updatedChat = await prisma.chat.updateMany({
+    const updatedChat = await prisma.chat.updateManyAndReturn({
       where: {
         OR: [
           { userId: senderId, user2Id: Number(recieverId) },
@@ -131,6 +180,10 @@ export const sendMessages = catchAsync(async (req,res,next) => {
         isRecentMessageRead: { set: false },
         recentMessageCreatedAt: new Date(),
       },
+      include:{
+        user:true,
+        user2:true,
+      }
     });
     console.log('after db save',ress);
     socketRes.mediaUrl = req.body?.image;
@@ -139,6 +192,7 @@ export const sendMessages = catchAsync(async (req,res,next) => {
     socketRes.caption = caption || '';
     socketRes.time = new Date().toISOString();
     socketRes.Type = "image"
+    console.log('chat: ',updatedChat)
     socketRes.chat = updatedChat;
     socketRes.isRead = false;
   }

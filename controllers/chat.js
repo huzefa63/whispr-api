@@ -46,4 +46,26 @@ export const createChat = catchAsync(async (req, res, next) => {
   });
   res.status(200).json({ status: "success", chats: chatRes });
 });
+export const deleteChat = catchAsync(async (req, res, next) => {
+  const userId = req.user?.id;
+  const {user,user2} = req.query;
+  if(userId != user && userId != user2) return res.status(400).json({status:'you are not authorized'})
+  await prisma.chat.deleteMany({
+    where:{
+      OR:[
+        {userId:Number(user),user2Id:Number(user2)},
+        {userId:Number(user2),user2Id:Number(user)},
+      ]
+    }
+  })
+  await prisma.message.deleteMany({
+    where: {
+      OR: [
+        { senderId: Number(user), recieverId: Number(user2) },
+        { senderId: Number(user2), recieverId: Number(user) },
+      ],
+    },
+  });
+  res.status(200).json({ status: "success"});
+});
 
