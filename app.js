@@ -11,6 +11,7 @@ import cookieParser from 'cookie-parser';
 import { jwtDecode } from 'jwt-decode';
 import jsonwebtoken from 'jsonwebtoken';
 import bcrypt from 'bcrypt';
+import prisma from './lib/prisma.js';
 dotenv.config();
 const app = express();
 const server = http.createServer(app);
@@ -41,7 +42,7 @@ io.use((socket,next) => {
     next();
 })
 
-io.on('connection',(socket) => {
+io.on('connection',async (socket) => {
     console.log('user connected',socket.id);
     const userId = socket.userId;
     if(socketUsers.has(userId)){
@@ -49,6 +50,14 @@ io.on('connection',(socket) => {
         oldSocket?.disconnect?.(true);
     }
     socketUsers.set(userId,socket);
+    await prisma.user.update({
+        where:{
+            id:userId
+        },
+        data:{
+            status:'online'
+        }
+    })
     console.log(socketUsers.keys());
     socket.on('typing',({typerId,toTypingId}) => {
         if(socketUsers.has(toTypingId)){
@@ -56,9 +65,18 @@ io.on('connection',(socket) => {
         }
         console.log(socketUsers.get(toTypingId)?.id);
     })
-    socket.on('disconnect',() => {
+    socket.on('disconnect',async () => {
         if(socketUsers.has(userId)){
             socketUsers.delete(userId);
+            await prisma.user.update({
+                where:{
+                    id:userId
+                },
+                data:{
+                    status:'offline',
+                    lastSeen:new Date()
+                }
+            })
             console.log('user disconnected',userId);
         }
     })

@@ -25,6 +25,8 @@ model User {
   friend Chat[] @relation("user2")
   messagesSent Message[] @relation("messagesSent")
   messagesReceived Message[] @relation("messagesReceived")
+  status String?
+  lastSeen DateTime?
 }
 
 model Chat {
