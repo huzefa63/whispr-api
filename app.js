@@ -50,14 +50,19 @@ io.on('connection',async (socket) => {
         oldSocket?.disconnect?.(true);
     }
     socketUsers.set(userId,socket);
-    await prisma.user.update({
-        where:{
-            id:userId
-        },
-        data:{
-            status:'online'
-        }
-    })
+    const user = await prisma.user.findUnique({where:{id:userId}})
+    if(user){
+        await prisma.user.update({
+          where: {
+            id: userId,
+          },
+          data: {
+            status: "online",
+          },
+        });
+    }else{
+        socket.disconnect();
+    }
     console.log(socketUsers.keys());
     socket.on('typing',({typerId,toTypingId}) => {
         if(socketUsers.has(toTypingId)){
@@ -66,18 +71,21 @@ io.on('connection',async (socket) => {
         console.log(socketUsers.get(toTypingId)?.id);
     })
     socket.on('disconnect',async () => {
-        if(socketUsers.has(userId)){
-            socketUsers.delete(userId);
-            await prisma.user.update({
-                where:{
-                    id:userId
+        const user = await prisma.user.findUnique({where:{id:userId}})
+        if(user){
+            if (socketUsers.has(userId)) {
+              socketUsers.delete(userId);
+              await prisma.user.update({
+                where: {
+                  id: userId,
                 },
-                data:{
-                    status:'offline',
-                    lastSeen:new Date()
-                }
-            })
-            console.log('user disconnected',userId);
+                data: {
+                  status: "offline",
+                  lastSeen: new Date(),
+                },
+              });
+              console.log("user disconnected", userId);
+            }
         }
     })
 })
