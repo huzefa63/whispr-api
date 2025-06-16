@@ -37,6 +37,8 @@ model Chat {
   recentMessageSenderId Int?
   isRecentMessageRead Boolean @default(false)
   recentMessageCreatedAt DateTime?
+  userChatClearedAt DateTime @default(now())
+  user2ChatClearedAt DateTime @default(now())
 }
 
 model Message {

@@ -11,23 +11,60 @@ export const getMessages = catchAsync(async (req,res,next) => {
     const {friendId} = req.query;
     const {id:userId} = req.user;
     console.log(userId,friendId);
-    const messages = await prisma.message.findMany({
+   
+    const chat = await prisma.chat.findFirst({
       where: {
         OR: [
-          {
-            senderId: Number(friendId),
-            recieverId: Number(userId),
-          },
-          {
-            senderId: Number(userId),
-            recieverId: Number(friendId),
-          },
+          { userId: userId, user2Id: Number(friendId) },
+          { userId: Number(friendId), user2Id: userId },
         ],
-      },
-      orderBy: {
-        time: "asc",
-      },
+      }
     });
+    let messages;
+    if(userId === chat.userId){
+      messages = await prisma.message.findMany({
+        where: {
+          time: {
+            gte: chat.userChatClearedAt,
+          },
+          OR: [
+            {
+              senderId: Number(friendId),
+              recieverId: Number(userId),
+            },
+            {
+              senderId: Number(userId),
+              recieverId: Number(friendId),
+            },
+          ],
+        },
+        orderBy: {
+          time: "asc",
+        },
+      });
+    }else{
+      messages = await prisma.message.findMany({
+        where: {
+          time: {
+            gte: chat.user2ChatClearedAt,
+          },
+          OR: [
+            {
+              senderId: Number(friendId),
+              recieverId: Number(userId),
+            },
+            {
+              senderId: Number(userId),
+              recieverId: Number(friendId),
+            },
+          ],
+        },
+        orderBy: {
+          time: "asc",
+        },
+      });
+    }
+    
     res.status(200).json({status:'success',messages})
 })
 
@@ -39,43 +76,79 @@ export const deleteMessages = catchAsync(async (req, res, next) => {
   if (!friendId || friendId === "null" || friendId === "undefined") {
     return res.status(200).json({ message: "no friend id" });
   }
-  await prisma.message.deleteMany({
+  const newDate = new Date();
+  const chat = await prisma.chat.findFirst({
     where: {
-      OR: [
-        { senderId: userId, recieverId: Number(friendId) },
-        { senderId: Number(friendId), recieverId: userId },
-      ],
-    },
-  });
-  console.log("from friend", friendId);
-  await prisma.chat.updateMany({
-    where: {
-      OR: [
-        { userId: userId, user2Id: Number(friendId) },
-        { userId: Number(friendId), user2Id: userId },
-      ],
-    },
-    data: {
-      isRecentMessageRead: false,
-      recentMessage:null,
-      recentMessageCreatedAt:null,
-      recentMessageSenderId:null
-    },
-  });
-  const messages = await prisma.message.updateMany({
-    data: {
-      isRead: true,
-    },
-    where: {
-      senderId: Number(friendId),
-      recieverId: userId,
-    },
-  });
-  const friendSocketId = socketUsers.get(Number(friendId))?.id;
-  io.to(friendSocketId).emit("message-read", {
-    friendId: Number(friendId),
-    userId: userId,
-  });
+          OR: [
+            { userId: userId, user2Id: Number(friendId) },
+            { userId: Number(friendId), user2Id: userId },
+          ],
+        }
+  })
+
+  if(userId === chat?.userId){
+    await prisma.chat.updateMany({
+      where: {
+        OR: [
+          { userId: userId, user2Id: Number(friendId) },
+          { userId: Number(friendId), user2Id: userId },
+        ],
+      },
+      data:{
+        userChatClearedAt:newDate
+      }
+    });
+  }else{
+    await prisma.chat.updateMany({
+      where: {
+        OR: [
+          { userId: userId, user2Id: Number(friendId) },
+          { userId: Number(friendId), user2Id: userId },
+        ],
+      },
+      data: {
+        user2ChatClearedAt: newDate,
+      },
+    });
+  }
+
+  // await prisma.message.deleteMany({
+  //   where: {
+  //     OR: [
+  //       { senderId: userId, recieverId: Number(friendId) },
+  //       { senderId: Number(friendId), recieverId: userId },
+  //     ],
+  //   },
+  // });
+  // console.log("from friend", friendId);
+  // await prisma.chat.updateMany({
+  //   where: {
+  //     OR: [
+  //       { userId: userId, user2Id: Number(friendId) },
+  //       { userId: Number(friendId), user2Id: userId },
+  //     ],
+  //   },
+  //   data: {
+  //     isRecentMessageRead: false,
+  //     recentMessage:null,
+  //     recentMessageCreatedAt:null,
+  //     recentMessageSenderId:null
+  //   },
+  // });
+  // const messages = await prisma.message.updateMany({
+  //   data: {
+  //     isRead: true,
+  //   },
+  //   where: {
+  //     senderId: Number(friendId),
+  //     recieverId: userId,
+  //   },
+  // });
+  // const friendSocketId = socketUsers.get(Number(friendId))?.id;
+  // io.to(friendSocketId).emit("message-read", {
+  //   friendId: Number(friendId),
+  //   userId: userId,
+  // });
   res.status(200).json({ status: "success" });
 });
 ;
