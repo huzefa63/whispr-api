@@ -121,7 +121,7 @@ const multerStorage = multer.memoryStorage();
 
 const multerFilter = (req,file,cb) => {
   console.log('from file',file);
-  if(file.mimetype.startsWith('image/')){
+  if(file.mimetype.startsWith('image/') || file.mimetype.startsWith('audio/webm')){
     cb(null,true);
   }else{
     cb(new Error('only image are allowed'),false);
@@ -139,22 +139,47 @@ export const resizeImage = async (req,res,next) => {
     console.log("no file found to resize");
     return next();
   }
-  console.log('resizing image');
-  const imageBuffer = await sharp(req.file.buffer).resize(400,400).jpeg({quality:80}).toBuffer();
-  const readableBuffer = new Readable();
-  readableBuffer.push(imageBuffer);
-  readableBuffer.push(null);
+  if(file.mimetype.startsWith('audio/')) {
+    const readableBuffer = new Readable();
+    readableBuffer.push(file.buffer);
+    readableBuffer.push(null);
+    const stream = cloudinary.uploader.upload_stream(
+      {
+        resource_type: "auto",
+      },
+      (err, result) => {
+        if (err) next({ statusCode: 500, message: "error" });
+        console.log("secure url", result.secure_url);
+        req.body.audio = result.secure_url;
+        next();
+      }
+    );
+    readableBuffer.pipe(stream);
+  }
+  else{
+    console.log("resizing image");
+    const imageBuffer = await sharp(req.file.buffer)
+      .resize(400, 400)
+      .jpeg({ quality: 80 })
+      .toBuffer();
+    const readableBuffer = new Readable();
+    readableBuffer.push(imageBuffer);
+    readableBuffer.push(null);
 
-  const stream = cloudinary.uploader.upload_stream({
-    resource_type:'auto',
-  },(err,result) => {
-    if(err) next({statusCode:500,message:'error'});
-    console.log('secure url',result.secure_url);
-    req.body.image = result.secure_url;
-    next();
-  })
+    const stream = cloudinary.uploader.upload_stream(
+      {
+        resource_type: "auto",
+      },
+      (err, result) => {
+        if (err) next({ statusCode: 500, message: "error" });
+        console.log("secure url", result.secure_url);
+        req.body.image = result.secure_url;
+        next();
+      }
+    );
 
-  readableBuffer.pipe(stream);
+    readableBuffer.pipe(stream);
+  }
 }
 
 export const sendMessages = catchAsync(async (req,res,next) => {
@@ -162,6 +187,46 @@ export const sendMessages = catchAsync(async (req,res,next) => {
     const senderId = req.user?.id;
     let socketRes = {};
     console.log('from main handler',req.body?.image)
+
+    if(req.body?.audio){
+      const ress = await prisma.message.create({
+        data: {
+          mediaUrl: req.body?.audio,
+          senderId,
+          recieverId: Number(recieverId),
+          Type: "audio",
+        },
+        // data: { mediaUrl:req.image, senderId, recieverId: 2,caption:caption ||'' },
+      });
+      const updatedChat = await prisma.chat.updateManyAndReturn({
+        where: {
+          OR: [
+            { userId: senderId, user2Id: Number(recieverId) },
+            { userId: Number(recieverId), user2Id: senderId },
+          ],
+        },
+        data: {
+          recentMessage: { set: "audio" },
+          recentMessageSenderId: { set: senderId },
+          isRecentMessageRead: { set: false },
+          recentMessageCreatedAt: new Date(),
+        },
+        include: {
+          user: true,
+          user2: true,
+        },
+      });
+      console.log("after db save", ress);
+      socketRes.mediaUrl = req.body?.audio;
+      socketRes.senderId = senderId;
+      socketRes.recieverId = recieverId;
+      socketRes.caption = caption || "";
+      socketRes.time = new Date().toISOString();
+      socketRes.Type = "audio";
+      console.log("chat: ", updatedChat);
+      socketRes.chat = updatedChat;
+      socketRes.isRead = false;
+    }
   if(req.body?.image) {
     const ress = await prisma.message.create({
       data: { mediaUrl:req.body?.image, senderId, recieverId: Number(recieverId),caption:caption ||'',Type:'image' },
@@ -197,10 +262,10 @@ export const sendMessages = catchAsync(async (req,res,next) => {
     socketRes.isRead = false;
   }
 
-    if(!req.body?.image){
+    if(!req.body?.image && !req.body?.audio){
 
       await prisma.message.create({
-        data: { message, senderId, recieverId: Number(recieverId) },
+        data: { message, senderId, recieverId: Number(recieverId),Type:'text' },
       });
       console.log('heeee',senderId,recieverId)
       const updatedChat = await prisma.chat.updateManyAndReturn({
@@ -220,6 +285,7 @@ export const sendMessages = catchAsync(async (req,res,next) => {
           recentMessageSenderId: { set: senderId },
           isRecentMessageRead:{set:false},
           recentMessageCreatedAt: new Date()
+          
         },
       });
       socketRes.senderId = senderId;

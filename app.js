@@ -56,12 +56,6 @@ io.on('connection',(socket) => {
         }
         console.log(socketUsers.get(toTypingId)?.id);
     })
-    socket.on('start-call',({toUser,offer}) => {
-        socket.to(socketUsers.get(toUser)).emit('call-incoming',{fromUser:socket.id,offer});
-    })
-    socket.on('answer',({toUser,answer}) => {
-        socket.to(toUser).emit('answer',{fromUser:socket.id,answer})
-    })
     socket.on('disconnect',() => {
         if(socketUsers.has(userId)){
             socketUsers.delete(userId);
