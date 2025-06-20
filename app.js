@@ -94,11 +94,6 @@ app.use('/keepServerAlive',(req,res) => console.log('server is alive'));
 
 
 
-app.use((err,req,res,next) => {
-    console.log(err);
-    res.status(500).json({message:err?.message});
-})
-
 export default io;
 
 server.listen(process.env.PORT,()=> console.log('hello'));
