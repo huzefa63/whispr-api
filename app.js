@@ -86,8 +86,10 @@ io.on('connection',async (socket) => {
     })
     socket.on('start-call',({from,to,offer}) => {
       console.log('call incoming',from,to)
-      console.log('map: ',socketUsers);
+      console.log('call coming from',socketUsers.get(from));
+      console.log('call to',socketUsers.get(to));
       console.log('start-call-with: ', socketUsers.get(to)?.id);
+      console.log('is user found to call: ',socketUsers.has(to));
       if(socketUsers.has(to)){
         console.log('user found to start call');
         socket.to(socketUsers.get(to).id).emit('call-incoming',{from,remoteOffer:offer});
@@ -122,8 +124,8 @@ io.on('connection',async (socket) => {
                   lastSeen: new Date(),
                 },
               });
+              console.log("user socket disconnected: ", socketUsers.get(Number(userId)));
               console.log("user disconnected", userId);
-              console.log("map after user disconnected: ", socketUsers);
 
             } 
         }
