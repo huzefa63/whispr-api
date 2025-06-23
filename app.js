@@ -70,6 +70,23 @@ io.on('connection',async (socket) => {
         }
         console.log(socketUsers.get(toTypingId)?.id);
     })
+    socket.on('start-call',({from,to,offer}) => {
+      console.log('call incoming',from,to)
+      if(socketUsers.has(to)){
+        socket.to(socketUsers.get(to).id).emit('call-incoming',{from,remoteOffer:offer});
+      }
+    })
+    socket.on('ice-candidate',({from,to,candidate}) => {
+      console.log('call incoming',from,to)
+      if(socketUsers.has(to)){
+        socket.to(socketUsers.get(to).id).emit('ice-candidate',{from,to,candidate});
+      }
+    })
+    socket.on('answer',({from,to,answer}) => {
+      if(socketUsers.has(to)){
+        socket.to(socketUsers.get(to).id).emit('answer',{from,to,answer});
+      }
+    })
     socket.on('disconnect',async () => {
         const user = await prisma.user.findUnique({where:{id:userId}})
         if(user){
