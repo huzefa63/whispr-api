@@ -48,6 +48,7 @@ io.use((socket, next) => {
 
     return next();
   } catch (err) {
+    console.log('socket auth failed');
     console.error("❌ JWT verification failed:", err.message);
     return next(new Error("Authentication error: Invalid token"));
   }
