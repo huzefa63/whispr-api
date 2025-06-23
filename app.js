@@ -47,6 +47,7 @@ io.on('connection',async (socket) => {
     console.log('map after user connected: ',socketUsers)
     const userId = socket.userId;
     if(socketUsers.has(userId)){
+      console.log('socket user already exists')
         const oldSocket = socketUsers.get(userId);
         oldSocket?.disconnect?.(true);
     }
@@ -92,8 +93,11 @@ io.on('connection',async (socket) => {
         socket.to(socketUsers.get(to).id).emit('answer',{from,to,answer});
       }
     })
+
     socket.on('disconnect',async () => {
+      const userId = socket?.userId;
         const user = await prisma.user.findUnique({where:{id:userId}})
+
         if(user){
             if (socketUsers.has(userId)) {
               socketUsers.delete(userId);
