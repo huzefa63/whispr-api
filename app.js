@@ -72,6 +72,7 @@ io.on('connection',async (socket) => {
     })
     socket.on('start-call',({from,to,offer}) => {
       console.log('call incoming',from,to)
+      console.log(socketUsers.get(to));
       if(socketUsers.has(to)){
         console.log('user found to start call');
         socket.to(socketUsers.get(to).id).emit('call-incoming',{from,remoteOffer:offer});
