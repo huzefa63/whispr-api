@@ -72,7 +72,7 @@ io.on('connection',async (socket) => {
     })
     socket.on('start-call',({from,to,offer}) => {
       console.log('call incoming',from,to)
-      console.log('map: ',map);
+      console.log('map: ',socketUsers);
       console.log('start-call-with: ', socketUsers.get(to)?.id);
       if(socketUsers.has(to)){
         console.log('user found to start call');
