@@ -34,13 +34,25 @@ app.use('/auth',authRoute);
 export let socketUsers = new Map();
 
 
-io.use((socket,next) => {
+io.use((socket, next) => {
+  try {
     const token = socket.handshake.auth?.jwt;
-    if(!token) next({statusCode:401,message:'you are not authenticated'});
-    const payload = jsonwebtoken.verify(token,process.env.SECRET);
+
+    if (!token) {
+      console.warn("❌ No token provided in handshake");
+      return next(new Error("Authentication error: No token"));
+    }
+
+    const payload = jsonwebtoken.verify(token, process.env.SECRET);
     socket.userId = payload.id;
-    next();
-})
+
+    return next();
+  } catch (err) {
+    console.error("❌ JWT verification failed:", err.message);
+    return next(new Error("Authentication error: Invalid token"));
+  }
+});
+
 
 io.on('connection',async (socket) => {
     console.log('user connected',socket.id);
