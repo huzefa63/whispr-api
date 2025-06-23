@@ -108,6 +108,18 @@ io.on('connection',async (socket) => {
         socket.to(socketUsers.get(to).id).emit('answer',{from,to,answer});
       }
     })
+    socket.on('reject-call',({caller}) => {
+      console.log('call rejected , caller: ',caller)
+      if(socketUsers.has(Number(caller))){
+        socket.to(socketUsers.get(Number(caller)).id).emit('call-rejected');
+      }
+    })
+    socket.on('end-call',({callee}) => {
+      // console.log('call rejected , caller: ',caller)
+      if(socketUsers.has(callee)){
+        socket.to(socketUsers.get(callee).id).emit('call-rejected');
+      }
+    })
 
     socket.on('disconnect',async () => {
       const userId = socket?.userId;
