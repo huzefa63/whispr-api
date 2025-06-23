@@ -44,6 +44,7 @@ io.use((socket,next) => {
 
 io.on('connection',async (socket) => {
     console.log('user connected',socket.id);
+    console.log('map after user connected: ',socketUsers)
     const userId = socket.userId;
     if(socketUsers.has(userId)){
         const oldSocket = socketUsers.get(userId);
@@ -106,6 +107,8 @@ io.on('connection',async (socket) => {
                 },
               });
               console.log("user disconnected", userId);
+              console.log("map after user disconnected: ", socketUsers);
+
             } 
         }
     })
