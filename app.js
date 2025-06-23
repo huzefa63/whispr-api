@@ -78,12 +78,13 @@ io.on('connection',async (socket) => {
       }
     })
     socket.on('ice-candidate',({from,to,candidate}) => {
-      console.log('call incoming',from,to)
+      console.log('ice coming',from,to)
       if(socketUsers.has(to)){
         socket.to(socketUsers.get(to).id).emit('ice-candidate',{from,to,candidate});
       }
     })
     socket.on('answer',({from,to,answer}) => {
+      console.log('answer coming');
       if(socketUsers.has(to)){
         socket.to(socketUsers.get(to).id).emit('answer',{from,to,answer});
       }
