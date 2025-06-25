@@ -85,15 +85,15 @@ io.on('connection',async (socket) => {
         }
         console.log(socketUsers.get(toTypingId)?.id);
     })
-    socket.on('start-call',({from,to,offer}) => {
-      console.log('call incoming',from,to)
-      console.log('call coming from',socketUsers.get(from));
-      console.log('call to',socketUsers.get(to));
-      console.log('start-call-with: ', socketUsers.get(to)?.id);
-      console.log('is user found to call: ',socketUsers.has(to));
+    socket.on('start-call',({from,to,offer,type}) => {
+      // console.log('call incoming',from,to)
+      // console.log('call coming from',socketUsers.get(from));
+      // console.log('call to',socketUsers.get(to));
+      // console.log('start-call-with: ', socketUsers.get(to)?.id);
+      // console.log('is user found to call: ',socketUsers.has(to));
       if(socketUsers.has(to)){
         console.log('user found to start call');
-        socket.to(socketUsers.get(to).id).emit('call-incoming',{from,remoteOffer:offer});
+        socket.to(socketUsers.get(to).id).emit('call-incoming',{from,remoteOffer:offer,type});
       }
     })
     socket.on('ice-candidate',({from,to,candidate}) => {
