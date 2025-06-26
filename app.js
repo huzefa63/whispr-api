@@ -145,7 +145,7 @@ io.on('connection',async (socket) => {
     })
 })
 
-app.use('/keepServerAlive',(req,res) => console.log('server is alive'));
+app.use('/keepServerAlive',(req,res) => res.send('backend is alive'));
 
 
 
