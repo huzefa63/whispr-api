@@ -108,10 +108,10 @@ io.on('connection',async (socket) => {
         socket.to(socketUsers.get(to).id).emit('answer',{from,to,answer});
       }
     })
-    socket.on('reject-call',({caller}) => {
+    socket.on('reject-call',({caller,lineBusy}) => {
       console.log('call rejected , caller: ',caller)
       if(socketUsers.has(Number(caller))){
-        socket.to(socketUsers.get(Number(caller)).id).emit('call-rejected');
+        socket.to(socketUsers.get(Number(caller)).id).emit('call-rejected',{lineBusy});
       }
     })
     socket.on('end-call',({callee}) => {
