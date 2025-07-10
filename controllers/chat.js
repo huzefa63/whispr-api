@@ -27,7 +27,7 @@ export const createChat = catchAsync(async (req, res, next) => {
           contactNumber:contactNumber,
         }
     })
-    if(!friend) return res.status(400).json({status:"friend does not exist"});
+    if(!friend) return res.status(400).json({message:"friend does not exist"});
     const friendId = friend.id;
     const chatsExists = await prisma.chat.findFirst({
       where: {
@@ -42,7 +42,7 @@ export const createChat = catchAsync(async (req, res, next) => {
       },
     });
     
-    if(chatsExists) next({statusCode:500,message:'chat already exists'});
+    if(chatsExists) return res.status(400).json({status:'failed',message:'friend is already added!'});
   const chatRes = await prisma.chat.create({
     data:{
         userId:userId,
