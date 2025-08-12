@@ -55,4 +55,5 @@ model Message {
   mediaUrl String?
   caption String?
   Type String?
+  isEdited Boolean @default(false)
 }

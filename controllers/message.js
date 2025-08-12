@@ -151,7 +151,55 @@ export const deleteMessages = catchAsync(async (req, res, next) => {
   // });
   res.status(200).json({ status: "success" });
 });
-;
+export const deleteMessage = catchAsync(async (req, res, next) => {
+  console.log('route hit');
+  const { id: userId } = req.user;
+  const {messageId} = req.params;
+  console.log('messageId',messageId);
+  const message = await prisma.message.findFirst({
+    where: {
+          id:Number(messageId)
+        }
+  })
+
+  if(message.senderId !== userId) return res.status(400).json({message:'not authorized for this action'});
+
+  await prisma.message.delete({
+    where:{
+      id:Number(messageId)
+    }
+  })
+  
+  res.status(200).json({ status: "success" });
+});
+
+
+export const updateMessage = catchAsync(async (req, res, next) => {
+  // console.log('route hit');
+  const { id: userId } = req.user;
+  const {messageId} = req.params;
+  // console.log('messageId',messageId);
+  const message = await prisma.message.findFirst({
+    where: {
+          id:Number(messageId)
+        }
+  })
+  if(!req.body.message) return res.status(400).json({message:'no message provided to update'});
+  if(message.senderId !== userId) return res.status(400).json({message:'not authorized for this action'});
+
+  await prisma.message.update({
+    where:{
+      id:Number(messageId)
+    },
+    data:{
+      message:req.body.message,
+      isEdited:true,
+    }
+  })
+  
+  res.status(200).json({ status: "success" });
+});
+
 export const readMessages = catchAsync(async (req,res,next) => {
     const {friendId} = req.params;
     const {id:userId} = req.user;
