@@ -175,10 +175,10 @@ export const deleteMessage = catchAsync(async (req, res, next) => {
 
 
 export const updateMessage = catchAsync(async (req, res, next) => {
-  // console.log('route hit');
+  console.log('update route hit');
   const { id: userId } = req.user;
   const {messageId} = req.params;
-  // console.log('messageId',messageId);
+  console.log('messageId: ',messageId);
   const message = await prisma.message.findFirst({
     where: {
           id:Number(messageId)
