@@ -33,9 +33,9 @@ export const verifyUser = catchAsync(async (req,res,next) => {
 })
 
 export const protectRoute = catchAsync(async (req,res,next) => {
-    console.log('protect');
+    // console.log('protect');
     const token = req.headers.authorization.split('=')[1];
-    console.log('jwt: ',token);
+    // console.log('jwt: ',token);
     if(!token) return res.status(401).json({status:'no cookie'});
     const user = jwt.verify(token,process.env.SECRET);
     req.user = user;

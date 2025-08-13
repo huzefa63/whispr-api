@@ -154,7 +154,8 @@ export const deleteMessages = catchAsync(async (req, res, next) => {
 export const deleteMessage = catchAsync(async (req, res, next) => {
   console.log('route hit');
   const { id: userId } = req.user;
-  const {messageId} = req.params;
+  let socketRes = {};
+  const {messageId,otherUser} = req.query;
   console.log('messageId',messageId);
   const message = await prisma.message.findFirst({
     where: {
@@ -164,11 +165,56 @@ export const deleteMessage = catchAsync(async (req, res, next) => {
 
   if(message.senderId !== userId) return res.status(400).json({message:'not authorized for this action'});
 
-  await prisma.message.delete({
+  const latestMessageBeforeDelete = await prisma.message.findFirst({
+    where: {
+      OR: [
+        { senderId: userId, recieverId: Number(otherUser) },
+        { senderId: Number(otherUser), recieverId: userId },
+      ],
+    },
+    orderBy:{
+      time:'desc',
+    }
+  });
+  const deletedMess = await prisma.message.delete({
     where:{
       id:Number(messageId)
     }
   })
+  if(latestMessageBeforeDelete.id === deletedMess.id){
+    const latestMessageAfterDelete = await prisma.message.findFirst({
+      where: {
+        OR: [
+          { senderId: userId, recieverId: Number(otherUser) },
+          { senderId: Number(otherUser), recieverId: userId },
+        ],
+      },
+      orderBy: {
+        time: "desc",
+      },
+    });
+    const updatedChat = await prisma.chat.updateManyAndReturn({
+      where: {
+        OR: [
+          { userId: userId, user2Id: Number(otherUser) },
+          { userId: Number(otherUser), user2Id: userId },
+        ],
+      },
+      data:{
+        recentMessageSenderId:latestMessageAfterDelete.senderId,
+        recentMessageCreatedAt:latestMessageAfterDelete.time,
+        recentMessage:latestMessageAfterDelete.message,
+        isRecentMessageRead:latestMessageAfterDelete.isRead
+      }
+    });
+    socketRes.chat = updatedChat[0];
+    console.log("updatedChat: ", updatedChat);
+  }
+  socketRes.deletedMessageId = deletedMess.id;
+  // console.log("socket: ", socketUsers.get(Number(otherUser))?.id);
+  io.to(socketUsers.get(Number(otherUser))?.id).emit('messageDeleted',socketRes); 
+  socketRes.deletedMessageId = null;
+  io.to(socketUsers.get(userId)?.id).emit('messageDeleted',socketRes); 
   
   res.status(200).json({ status: "success" });
 });
@@ -176,9 +222,12 @@ export const deleteMessage = catchAsync(async (req, res, next) => {
 
 export const updateMessage = catchAsync(async (req, res, next) => {
   console.log('update route hit');
+  console.log(req.body.otherUser);
   const { id: userId } = req.user;
   const {messageId} = req.params;
   console.log('messageId: ',messageId);
+  const {otherUser} = req.body;
+  let socketRes = {};
   const message = await prisma.message.findFirst({
     where: {
           id:Number(messageId)
@@ -187,7 +236,7 @@ export const updateMessage = catchAsync(async (req, res, next) => {
   if(!req.body.message) return res.status(400).json({message:'no message provided to update'});
   if(message.senderId !== userId) return res.status(400).json({message:'not authorized for this action'});
 
-  await prisma.message.update({
+  const updatedMessage = await prisma.message.updateManyAndReturn({
     where:{
       id:Number(messageId)
     },
@@ -196,8 +245,55 @@ export const updateMessage = catchAsync(async (req, res, next) => {
       isEdited:true,
     }
   })
+  const recentMessage = await prisma.message.findFirst({
+    where: {
+      OR: [
+        { senderId: userId, recieverId: Number(otherUser) },
+        { senderId: Number(otherUser), recieverId: userId },
+      ],
+    },
+    orderBy:{
+      time:'desc',
+    }
+  });
+  console.log('recent messageId: ',recentMessage.id);
+  console.log('messageId: ',messageId);
+  if(Number(messageId) === recentMessage.id){
+     const updatedChat = await prisma.chat.updateManyAndReturn({
+       where: {
+         OR: [
+           { userId: userId, user2Id: Number(otherUser) },
+           { userId: Number(otherUser), user2Id: userId },
+         ],
+       },
+       include: {
+         user: true,
+         user2: true,
+       },
+       data: {
+         recentMessage: { set: req.body.message },
+        isRecentMessageRead:recentMessage.isRead,
+       },
+     });
+    //  socketRes.senderId = senderId;
+    //   socketRes.recieverId = recieverId;
+      // socketRes.time = new Date().toISOString();
+      socketRes.chatId = updatedChat[0].id;
+      socketRes.recentMessage = updatedChat[0].recentMessage;
+      socketRes.isRecentMessageRead = updatedChat[0].isRecentMessageRead;
+    }
+    socketRes.message = updatedMessage[0];
+    socketRes.Type = "text"
+    // socketRes.uniqueId = uniqueId;
+    // socketRes.isRead = false;
+    socketRes.messageId = messageId;
+    const recieverSocketId = socketUsers.get(Number(otherUser))?.id;
+    const senderSocketId = socketUsers.get(userId)?.id;
+    io.to(recieverSocketId).emit("messageUpdated", socketRes);
+    io.to(senderSocketId).emit("messageUpdated", socketRes);
   
-  res.status(200).json({ status: "success" });
+    // res.status(200).json({ status: "success" });
+    res.status(200).json({ status: "success" });
 });
 
 export const readMessages = catchAsync(async (req,res,next) => {
@@ -385,7 +481,7 @@ export const sendMessages = catchAsync(async (req,res,next) => {
 
     if(!req.body?.image && !req.body?.audio){
 
-      await prisma.message.create({
+      const newMessage = await prisma.message.create({
         data: { message, senderId, recieverId: Number(recieverId),Type:'text' },
       });
       console.log('heeee',senderId,recieverId)
@@ -417,6 +513,7 @@ export const sendMessages = catchAsync(async (req,res,next) => {
       socketRes.chat = updatedChat;
       socketRes.uniqueId = uniqueId;
       socketRes.isRead = false;
+      socketRes.id = newMessage.id;
     }
     const recieverSocketId = socketUsers.get(Number(recieverId))?.id;
     const senderSocketId = socketUsers.get(senderId)?.id;

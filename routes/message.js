@@ -17,7 +17,7 @@ route.get('/getMessages',protectRoute,getMessages);
 route.post('/sendMessage',protectRoute,upload.single('media'),resizeImage,sendMessages);
 route.delete('/deleteMessages/:friendId',protectRoute,deleteMessages);
 route.get('/readMessages/:friendId',protectRoute,readMessages);
-route.delete('/deleteMessage/:messageId',protectRoute,deleteMessage);
+route.delete('/deleteMessage',protectRoute,deleteMessage);
 route.patch('/updateMessage/:messageId',protectRoute,updateMessage);
 // route.post('/sendMessage',upload.single('media'),resizeImage,sendMessages);
 
