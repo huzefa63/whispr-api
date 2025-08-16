@@ -400,7 +400,7 @@ export const resizeImage = async (req,res,next) => {
 }
 
 export const sendMessages = catchAsync(async (req,res,next) => {
-    const {message,recieverId,caption,uniqueId} = req.body;
+    const {message,recieverId,caption,uniqueId,type} = req.body;
     const senderId = req.user?.id;
     let socketRes = {};
     console.log('from main handler',req.body?.image)
@@ -480,11 +480,19 @@ export const sendMessages = catchAsync(async (req,res,next) => {
   }
 
     if(!req.body?.image && !req.body?.audio){
-
+      console.log(req.body);
       const newMessage = await prisma.message.create({
-        data: { message, senderId, recieverId: Number(recieverId),Type:'text' },
+        data: {
+          message,
+          senderId,
+          recieverId: Number(recieverId),
+          Type: req.body.type === "text-reply" ? "text-reply" : "text",
+          replyText: req.body.replyText || null,
+          replyTextId: Number(req.body.replyTextId) || null,
+          replyTextSenderId:Number(req.body.replyTextSenderId) || null,
+        },
       });
-      console.log('heeee',senderId,recieverId)
+      console.log('heeee',newMessage);
       const updatedChat = await prisma.chat.updateManyAndReturn({
         where: {
           OR: [
@@ -495,6 +503,7 @@ export const sendMessages = catchAsync(async (req,res,next) => {
         include:{
           user:true,
           user2:true,
+          replyTextSender:true,
         },
         data: {
           // lastMessage: message,

@@ -25,6 +25,7 @@ model User {
   friend Chat[] @relation("user2")
   messagesSent Message[] @relation("messagesSent")
   messagesReceived Message[] @relation("messagesReceived")
+  replyTextSender Message[] @relation("replyTextSender")
   status String?
   lastSeen DateTime?
 }
@@ -56,4 +57,8 @@ model Message {
   caption String?
   Type String?
   isEdited Boolean @default(false)
+  replyText String?
+  replyTextId Int?
+  replyTextSender User? @relation("replyTextSender",fields: [replyTextSenderId],references: [id])
+  replyTextSenderId Int?
 }
