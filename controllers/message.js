@@ -62,6 +62,11 @@ export const getMessages = catchAsync(async (req,res,next) => {
         orderBy: {
           time: "asc",
         },
+        include:{
+          sender:true,
+          reciever:true,
+          replyTextSender:true,
+        }
       });
     }
     
@@ -491,6 +496,9 @@ export const sendMessages = catchAsync(async (req,res,next) => {
           replyTextId: Number(req.body.replyTextId) || null,
           replyTextSenderId:Number(req.body.replyTextSenderId) || null,
         },
+        include:{
+          sender:true,
+        }
       });
       console.log('heeee',newMessage);
       const updatedChat = await prisma.chat.updateManyAndReturn({
@@ -503,7 +511,6 @@ export const sendMessages = catchAsync(async (req,res,next) => {
         include:{
           user:true,
           user2:true,
-          replyTextSender:true,
         },
         data: {
           // lastMessage: message,
@@ -518,11 +525,19 @@ export const sendMessages = catchAsync(async (req,res,next) => {
       socketRes.recieverId = recieverId;
       socketRes.time = new Date().toISOString();
       socketRes.message = message;
-      socketRes.Type = "text"
+      socketRes.Type = 'text';
       socketRes.chat = updatedChat;
       socketRes.uniqueId = uniqueId;
       socketRes.isRead = false;
       socketRes.id = newMessage.id;
+      socketRes.sender = newMessage.sender;
+    }
+    console.log("let's see: ",req.body);
+    if(req.body.type === 'text-reply'){
+      socketRes.Type = 'text-reply';
+      socketRes.replyText = req.body.replyText;
+      socketRes.replyTextSender = {name:req.body.senderName}; 
+      socketRes.replyTextSenderId = req.body.replyTextSenderId; 
     }
     const recieverSocketId = socketUsers.get(Number(recieverId))?.id;
     const senderSocketId = socketUsers.get(senderId)?.id;
