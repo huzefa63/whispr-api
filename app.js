@@ -96,6 +96,9 @@ io.on('connection',async (socket) => {
         socket.to(socketUsers.get(to).id).emit('call-incoming',{from,remoteOffer:offer,type});
       }
     })
+    socket.on('line-busy',({to}) => {
+      socket.to(socketUsers.get(Number(to).id)).emit('line-busy');
+    })
     socket.on('ice-candidate',({from,to,candidate}) => {
       console.log('ice coming',from,to)
       if(socketUsers.has(to)){
@@ -123,6 +126,7 @@ io.on('connection',async (socket) => {
 
     socket.on('disconnect',async () => {
       const userId = socket?.userId;
+      console.log('disconnected: ',userId)
         const user = await prisma.user.findUnique({where:{id:userId}})
 
         if(user){
