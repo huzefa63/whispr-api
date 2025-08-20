@@ -545,6 +545,7 @@ export const sendMessages = catchAsync(async (req,res,next) => {
       socketRes.isRead = false;
       socketRes.id = newMessage.id;
       socketRes.sender = newMessage.sender;
+      socketRes.deletedBy = [];
     }
     console.log("let's see: ",req.body);
     if(req.body.type === 'text-reply'){
