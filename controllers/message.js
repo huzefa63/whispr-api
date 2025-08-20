@@ -160,7 +160,7 @@ export const deleteMessage = catchAsync(async (req, res, next) => {
   console.log('route hit');
   const { id: userId } = req.user;
   let socketRes = {};
-  const {messageId,otherUser} = req.query;
+  const {messageId,otherUser,deleteFor} = req.query;
   console.log('messageId',messageId);
   const message = await prisma.message.findFirst({
     where: {
@@ -169,6 +169,20 @@ export const deleteMessage = catchAsync(async (req, res, next) => {
   })
 
   if(message.senderId !== userId) return res.status(400).json({message:'not authorized for this action'});
+
+  if(deleteFor === 'me') {
+    await prisma.message.update({
+      where:{
+        id:Number(messageId)
+      },
+      data:{
+        deletedBy:{
+          push:userId
+        }
+      }
+    })
+    return res.status(200).json({status:'success'})
+  }
 
   const latestMessageBeforeDelete = await prisma.message.findFirst({
     where: {

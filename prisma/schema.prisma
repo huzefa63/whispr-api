@@ -61,4 +61,5 @@ model Message {
   replyTextId Int?
   replyTextSender User? @relation("replyTextSender",fields: [replyTextSenderId],references: [id])
   replyTextSenderId Int?
+  deletedBy Int[] @default([])
 }
