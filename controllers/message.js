@@ -462,6 +462,7 @@ export const sendMessages = catchAsync(async (req,res,next) => {
       console.log("chat: ", updatedChat);
       socketRes.chat = updatedChat;
       socketRes.isRead = false;
+      socketRes.deletedBy = [];
     }
   if(req.body?.image) {
     const ress = await prisma.message.create({
@@ -496,6 +497,7 @@ export const sendMessages = catchAsync(async (req,res,next) => {
     console.log('chat: ',updatedChat)
     socketRes.chat = updatedChat;
     socketRes.isRead = false;
+    socketRes.deletedBy = [];
   }
 
     if(!req.body?.image && !req.body?.audio){
