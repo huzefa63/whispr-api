@@ -97,7 +97,7 @@ io.on('connection',async (socket) => {
       }
     })
     socket.on('line-busy',({to}) => {
-      socket.to(socketUsers.get(Number(to).id)).emit('line-busy');
+      socket.to(socketUsers.get(Number(to)).id).emit('line-busy');
     })
     socket.on('ice-candidate',({from,to,candidate}) => {
       console.log('ice coming',from,to)
