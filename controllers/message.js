@@ -41,6 +41,11 @@ export const getMessages = catchAsync(async (req,res,next) => {
         orderBy: {
           time: "asc",
         },
+        include: {
+          sender: true,
+          reciever: true,
+          replyTextSender: true,
+        },
       });
     }else{
       messages = await prisma.message.findMany({
