@@ -22,7 +22,7 @@ const io = new Server(server,{
 app.use(cookieParser());
 
 app.use(express.json());
-app.use(cors({origin:'*'}));
+app.use(cors({origin:'*',credentials:true}));
 app.use(express.urlencoded({extended:true}));
 
 app.use('/user',userRoute);
