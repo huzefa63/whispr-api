@@ -16,13 +16,13 @@ dotenv.config();
 const app = express();
 const server = http.createServer(app);
 const io = new Server(server,{
-    cors:{origin:'*',credentials:true}
+    cors:{origin:'*'}
 });
 
 app.use(cookieParser());
 
 app.use(express.json());
-app.use(cors({origin:'*',credentials:true}));
+app.use(cors({origin:'https://whispr-app.vercel.app',credentials:true}));
 app.use(express.urlencoded({extended:true}));
 
 app.use('/user',userRoute);
