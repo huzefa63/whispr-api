@@ -15,5 +15,12 @@ import catchAsync from "../lib/catchAsync.js";
             next({statusCode:401,message:'email or password is incorrect'});
         }
         const jwt = jsonwebtoken.sign(payload,process.env.SECRET);
-        res.status(200).json({status:'succss',jwt});
+        res.cookie("auth_token", jwt, {
+          httpOnly: true, // prevent JavaScript access
+          secure: true, // required for HTTPS
+          sameSite: "none", // allow cross-site cookie
+          maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+        });
+
+        res.status(200).json({ status: "success", jwt });
     })
